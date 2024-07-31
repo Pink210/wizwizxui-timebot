@@ -5,9 +5,9 @@ include_once 'jdf.php';
 
 $rateLimit = $botState['rateLimit']??0;
 if(time() > $rateLimit){
-    $rate = json_decode(file_get_contents("https://api.changeto.technology/api/rate"),true)['result'];
-    if(!empty($rate['USD'])) $botState['USDRate'] = $rate['USD'];
-    if(!empty($rate['TRX'])) $botState['TRXRate'] = $rate['TRX'];
+    $rate = json_decode(curl_get_file_contents("https://api.pooleno.ir/v1/currency/short-name/trx?type=buy"),true);
+    $botState['USDRate'] = round($rate['priceUsdt'],2);
+    $botState['TRXRate'] = round($rate['priceFiat'] / 10,2);
     $botState['rateLimit'] = strtotime("+1 hour");
     
     $stmt = $connection->prepare("SELECT * FROM `setting` WHERE `type` = 'BOT_STATES'");
@@ -61,7 +61,7 @@ if($list->num_rows > 0){
                     [['text'=>$buttonValues['start_bot'],'callback_data'=>"mainMenu"]]
                     ]
             ]);
-    if($usersList->num_rows > 1) {
+    if($usersList->num_rows > 0) {
         while($user = $usersList->fetch_assoc()){
             if($type == 'text'){
                 sendMessage($text,$keys,null,$user['userid']);
@@ -91,7 +91,7 @@ if($list->num_rows > 0){
                     'chat_id' => $user['userid'],
                     'document' => $file_id,
                     'caption' => $text,
-                    'reply_markup'=>$kes
+                    'reply_markup'=>$keys
                 ]);
             }elseif($type == 'photo'){
                 bot('sendPhoto', [
